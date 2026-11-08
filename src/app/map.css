@@ -1,0 +1,79 @@
+.map-canvas {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+.recenter-button {
+  position: absolute;
+  z-index: 500;
+  right: 14px;
+  bottom: 24px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid #dce3dc;
+  border-radius: 4px;
+  background: #fff;
+  color: #23463b;
+  box-shadow: 0 2px 8px #172f4b22;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nearme-map {
+  width: 100%;
+  height: 100%;
+  min-height: 340px;
+  z-index: 0;
+  background: #e8eee4;
+}
+.map-loading {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  color: #68756d;
+  font-size: 12px;
+}
+.user-marker-icon,
+.place-marker-icon {
+  background: transparent;
+  border: 0;
+}
+.user-marker-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 2px;
+  background: #4d82df;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 6px #172f4b88, 0 0 0 7px #4d82df30;
+}
+.place-marker-pin {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: #e46e50;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 5px;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 8px #26372e55;
+}
+.place-marker-pin span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+}
+.map-place-list > button:focus-visible {
+  outline: 3px solid #db8c6e;
+  outline-offset: -3px;
+}
+@media (max-width: 700px) {
+  .nearme-map {
+    min-height: 300px;
+  }
+}
