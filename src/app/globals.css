@@ -20,3 +20,22 @@
 .ai-summary{margin:0 0 7px}
 .ai-tip{background:#fff8ec;border-left:3px solid #e5a66e;padding:7px 10px;border-radius:0 4px 4px 0;margin-top:6px;color:#5a4731}
 .ai-tip strong{color:#935824}
+
+/* Mobile App UI Design Enhancements */
+.quick-chips{display:flex;align-items:center;gap:8px;overflow-x:auto;padding-top:10px;scrollbar-width:none}
+.quick-chips::-webkit-scrollbar{display:none}
+.chip-label{font-size:10px;font-weight:700;color:#87928c;white-space:nowrap;letter-spacing:1px}
+.chip-btn{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:11px;font-weight:600;color:#55645b;cursor:pointer;white-space:nowrap;transition:all .15s ease}
+.chip-btn:hover{background:var(--mint);border-color:var(--green);color:var(--green)}
+.modal-drag-handle{display:none}
+.mobile-bottom-bar{display:none}
+@media(max-width:768px){
+  body{padding-bottom:76px}
+  .mobile-bottom-bar{display:flex;position:fixed;bottom:0;left:0;right:0;height:66px;background:rgba(255,255,255,0.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line);z-index:99;justify-content:space-around;align-items:center;padding:0 6px max(6px,env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,0.06)}
+  .mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:#708078;font-size:10px;font-weight:600;padding:6px 12px;border-radius:12px;cursor:pointer;transition:all .15s ease}
+  .mobile-nav-item.active{color:var(--green);background:var(--mint)}
+  .modal-backdrop{align-items:flex-end;padding:0}
+  .detail-modal{width:100%;max-height:88vh;border-radius:24px 24px 0 0;animation:slideUp .25s ease-out}
+  .modal-drag-handle{width:40px;height:5px;background:#d2ded3;border-radius:10px;margin:10px auto 4px;display:block}
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}

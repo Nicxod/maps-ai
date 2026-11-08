@@ -30,6 +30,16 @@ const categoryIcons: Record<string, string> = {
   other: "pin",
 };
 
+const quickStations = [
+  { label: "Shinjuku", query: "Shinjuku, Tokyo" },
+  { label: "Shibuya", query: "Shibuya, Tokyo" },
+  { label: "Ginza", query: "Ginza, Tokyo" },
+  { label: "Asakusa", query: "Asakusa, Tokyo" },
+  { label: "Akihabara", query: "Akihabara, Tokyo" },
+  { label: "Kyoto", query: "Kyoto Station" },
+  { label: "Osaka", query: "Dotonbori, Osaka" },
+];
+
 const fmt = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1).replace(/\.0$/, "")} km`);
 
 const placeFetcher = async (url: string): Promise<Place[]> => {
@@ -161,6 +171,7 @@ export default function Home() {
   const [budget, setBudget] = useState("");
   const [minRating, setMinRating] = useState(0);
   const [openOnly, setOpenOnly] = useState(false);
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState("");
@@ -275,16 +286,16 @@ export default function Home() {
     );
   };
 
-  const manualSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  const executeSearch = async (searchTerm: string) => {
+    if (!searchTerm.trim()) return;
     setManualBusy(true);
     setError("");
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}&lang=${lang}`);
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(searchTerm)}&lang=${lang}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setPoint({ lat: data.lat, lng: data.lng, label: data.label.split(",").slice(0, 2).join(",") });
+      setQuery(searchTerm);
     } catch (e) {
       setError(e instanceof Error ? e.message : t.errorLocationNotFound);
     } finally {
@@ -292,12 +303,18 @@ export default function Home() {
     }
   };
 
+  const manualSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    executeSearch(query);
+  };
+
   const visible = useMemo(() => {
-    const arr = places.filter(
+    let arr = places.filter(
       (p) =>
         (!budget || !p.price || p.price.max <= Number(budget)) &&
         (!minRating || (p.rating !== undefined && p.rating >= minRating)) &&
-        (!openOnly || p.openNow === true)
+        (!openOnly || p.openNow === true) &&
+        (!onlyFavorites || favoriteIds.includes(p.id))
     );
     if (sort === "nearest") {
       arr.sort((a, b) => (a.walkingMeters ?? a.distanceMeters ?? 1e9) - (b.walkingMeters ?? b.distanceMeters ?? 1e9));
@@ -318,7 +335,7 @@ export default function Home() {
         (p.ratingCount ? Math.min(4, Math.log10(p.ratingCount + 1)) : 0);
       return distance + priceFit + rating + (p.openNow ? 15 : 0);
     }
-  }, [places, sort, budget, minRating, openOnly, radius]);
+  }, [places, sort, budget, minRating, openOnly, onlyFavorites, favoriteIds, radius]);
 
   const toggleFavorite = (id: string) =>
     setFavoriteIds((prev) => {
@@ -427,6 +444,20 @@ export default function Home() {
             <button type="submit" disabled={busy || !query.trim()} aria-label="Cari lokasi">
               <Icon name="arrow" />
             </button>
+          </div>
+          {/* Quick Destination Chips for mobile frictionless navigation */}
+          <div className="quick-chips" aria-label={t.quickPlacesTitle}>
+            <span className="chip-label">{t.quickPlacesTitle}:</span>
+            {quickStations.map((station) => (
+              <button
+                type="button"
+                key={station.label}
+                className="chip-btn"
+                onClick={() => executeSearch(station.query)}
+              >
+                {station.label}
+              </button>
+            ))}
           </div>
         </form>
         <div className="search-divider" />
@@ -545,6 +576,14 @@ export default function Home() {
             <label className="check-filter">
               <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} />
               {t.openOnlyLabel}
+            </label>
+            <label className="check-filter">
+              <input
+                type="checkbox"
+                checked={onlyFavorites}
+                onChange={(e) => setOnlyFavorites(e.target.checked)}
+              />
+              {t.onlyFavoritesLabel}
             </label>
           </div>
         )}
@@ -670,12 +709,13 @@ export default function Home() {
         {point && !busy && places.length > 0 && visible.length === 0 && (
           <div className="empty-filter">
             <h3>{t.emptyFilterTitle}</h3>
-            <p>{t.emptyFilterSub}</p>
+            <p>{onlyFavorites ? t.emptyFavorites : t.emptyFilterSub}</p>
             <button
               onClick={() => {
                 setBudget("");
                 setMinRating(0);
                 setOpenOnly(false);
+                setOnlyFavorites(false);
               }}
             >
               {t.clearFilters}
@@ -683,6 +723,44 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* Thumb-Zone Mobile Bottom Navigation Bar (Following Mobile App UI/UX Skill) */}
+      <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
+        <button
+          className={`mobile-nav-item ${mode === "list" && !onlyFavorites ? "active" : ""}`}
+          onClick={() => {
+            setMode("list");
+            setOnlyFavorites(false);
+          }}
+        >
+          <Icon name="list" size={19} />
+          <span>{t.navList}</span>
+        </button>
+        <button
+          className={`mobile-nav-item ${mode === "map" ? "active" : ""}`}
+          onClick={() => setMode("map")}
+        >
+          <Icon name="map" size={19} />
+          <span>{t.navMap}</span>
+        </button>
+        <button
+          className={`mobile-nav-item ${onlyFavorites ? "active" : ""}`}
+          onClick={() => {
+            setOnlyFavorites((prev) => !prev);
+            setMode("list");
+          }}
+        >
+          <Icon name="heart" size={19} />
+          <span>
+            {t.navFavorites}
+            {favoriteIds.length > 0 ? ` (${favoriteIds.length})` : ""}
+          </span>
+        </button>
+        <button className="mobile-nav-item" onClick={useLocation}>
+          <Icon name="locate" size={19} />
+          <span>{t.myLocation}</span>
+        </button>
+      </nav>
 
       <footer className="footer" id="how">
         <div className="footer-brand">
@@ -711,6 +789,7 @@ export default function Home() {
           }}
         >
           <section className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+            <span className="modal-drag-handle" aria-hidden="true" />
             <button className="modal-close" onClick={() => setSelected(null)} aria-label={t.closeDetail}>
               <Icon name="close" />
             </button>
