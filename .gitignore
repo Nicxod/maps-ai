@@ -6,3 +6,5 @@ out/
 dist/
 npm-debug.log*
 *.tsbuildinfo
+.vercel
+.env*
