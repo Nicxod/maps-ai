@@ -17,6 +17,7 @@ type AiPriceData = {
   max: number;
   summary: string;
   tip?: string;
+  sells?: string;
 };
 
 const categoryIcons: Record<string, string> = {
@@ -445,7 +446,7 @@ export default function Home() {
               <Icon name="arrow" />
             </button>
           </div>
-          {/* Quick Destination Chips for mobile frictionless navigation */}
+          {/* Quick Destination Chips */}
           <div className="quick-chips" aria-label={t.quickPlacesTitle}>
             <span className="chip-label">{t.quickPlacesTitle}:</span>
             {quickStations.map((station) => (
@@ -660,7 +661,10 @@ export default function Home() {
                   </div>
                   <div className="place-content">
                     <div className="place-meta">
-                      <span>{p.category}</span>
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                        <span>{p.category}</span>
+                        {p.specialty && <span className="specialty-badge">{p.specialty}</span>}
+                      </div>
                       {p.openNow !== undefined && (
                         <span className={p.openNow ? "open-label" : "closed-label"}>
                           <i />
@@ -669,6 +673,15 @@ export default function Home() {
                       )}
                     </div>
                     <h3>{p.name}</h3>
+
+                    {/* What it sells description directly on the card */}
+                    {p.sells && (
+                      <div className="place-sells-box">
+                        <span className="sells-icon">🛍️</span>
+                        <p className="place-sells">{p.sells}</p>
+                      </div>
+                    )}
+
                     <p className="place-address">{p.address}</p>
                     <div className="place-stats">
                       <span className="distance-stat">
@@ -687,13 +700,14 @@ export default function Home() {
                       )}
                     </div>
                     <div className="place-footer">
-                      <span className="price-label">
-                        {p.price
-                          ? `¥${p.price.min.toLocaleString()}–¥${p.price.max.toLocaleString()}`
-                          : p.priceLevel
-                            ? t.priceRangeCategory("¥".repeat(p.priceLevel))
-                            : t.priceUnavailable}
-                      </span>
+                      <div className="price-tag">
+                        <span className="price-tag-num">
+                          ¥{p.price.min.toLocaleString()} – ¥{p.price.max.toLocaleString()}
+                        </span>
+                        <small className="price-tag-sub">
+                          {lang === "ja" ? "目安 / 人" : lang === "en" ? "est. / person" : "perkiraan / orang"}
+                        </small>
+                      </div>
                       <button onClick={() => setSelected(p)} className="detail-button">
                         {t.detailBtn} <Icon name="chevron" size={15} />
                       </button>
@@ -724,7 +738,7 @@ export default function Home() {
         )}
       </section>
 
-      {/* Thumb-Zone Mobile Bottom Navigation Bar (Following Mobile App UI/UX Skill) */}
+      {/* Thumb-Zone Mobile Bottom Navigation Bar */}
       <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
         <button
           className={`mobile-nav-item ${mode === "list" && !onlyFavorites ? "active" : ""}`}
@@ -803,9 +817,20 @@ export default function Home() {
               )}
             </div>
             <div className="modal-body">
-              <span className="eyebrow">{selected.category}</span>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
+                <span className="eyebrow">{selected.category}</span>
+                {selected.specialty && <span className="specialty-badge">{selected.specialty}</span>}
+              </div>
               <h2 id="detail-title">{selected.name}</h2>
               <p>{selected.address}</p>
+
+              {/* What it sells description in modal */}
+              {selected.sells && (
+                <div className="modal-sells-highlight">
+                  <strong>🛍️ {t.sellsLabel}</strong>
+                  <p>{aiPrice?.sells || selected.sells}</p>
+                </div>
+              )}
 
               {/* AI Price Estimate Section */}
               <div className="ai-price-box">
@@ -814,23 +839,34 @@ export default function Home() {
                     <Icon name="sparkle" size={13} /> {t.aiEstimateBadge}
                   </span>
                   <strong className="ai-price-amount">
-                    {aiPriceLoading
-                      ? t.aiEstimating
-                      : aiPrice
-                        ? `¥${aiPrice.min.toLocaleString()} – ¥${aiPrice.max.toLocaleString()}`
+                    {aiPrice
+                      ? `¥${aiPrice.min.toLocaleString()} – ¥${aiPrice.max.toLocaleString()}`
+                      : selected.price
+                        ? `¥${selected.price.min.toLocaleString()} – ¥${selected.price.max.toLocaleString()}`
                         : t.priceDisclosureTitle}
                   </strong>
                 </div>
-                {aiPrice && (
-                  <div className="ai-price-content">
-                    <p className="ai-summary">{aiPrice.summary}</p>
-                    {aiPrice.tip && (
-                      <div className="ai-tip">
-                        <strong>💡 {t.aiTravelTip}:</strong> {aiPrice.tip}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="ai-price-content">
+                  {aiPriceLoading && !aiPrice ? (
+                    <p className="ai-summary">{t.aiEstimating}</p>
+                  ) : (
+                    <>
+                      <p className="ai-summary">
+                        {aiPrice?.summary ||
+                          (lang === "ja"
+                            ? "最新のオープンデータと相場基準から推定した平均予算です。"
+                            : lang === "en"
+                              ? "Estimated average budget based on verified Japanese market standards."
+                              : "Estimasi pengeluaran rata-rata berdasarkan standar pasar riil di Jepang.")}
+                      </p>
+                      {aiPrice?.tip && (
+                        <div className="ai-tip">
+                          <strong>💡 {t.aiTravelTip}:</strong> {aiPrice.tip}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="detail-facts">
@@ -919,6 +955,7 @@ function MapView({
             <span>
               <b>{p.name}</b>
               <small>
+                {p.price ? `¥${p.price.min.toLocaleString()} · ` : ""}
                 {p.walkingMeters ? fmt(p.walkingMeters) : fmt(p.distanceMeters ?? 0)}
               </small>
             </span>
